@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="profile-page">
+    <div class="container">
+        <div class="profile-layout">
+
+            <!-- SIDEBAR -->
+            <aside class="profile-sidebar">
+                <div class="profile-avatar">
+                    <i class="fa fa-user-shield fa-3x"></i>
+                    <h3>Administrator</h3>
+                    <p>System Control Panel</p>
+                </div>
+
+                <div class="profile-nav">
+                    <a href="{{ url_for('admin_dashboard') }}" class="{% if active_page=='dashboard' %}active{% endif %}">
+                        <i class="fa fa-chart-line"></i> Dashboard
+                    </a>
+                    <a href="{{ url_for('admin_sales') }}" class="{% if active_page=='sales' %}active{% endif %}">
+                        <i class="fa fa-rupee-sign"></i> Sales Report
+                    </a>
+                    <a href="{{ url_for('admin_transactions') }}" class="{% if active_page=='transactions' %}active{% endif %}">
+                        <i class="fa fa-exchange-alt"></i> Transactions
+                    </a>
+                    <a href="#"><i class="fa fa-box"></i> Products</a>
+                    <a href="#"><i class="fa fa-tags"></i> Categories</a>
+                    <a href="#"><i class="fa fa-users"></i> Customers</a>
+                    <a href="#"><i class="fa fa-star"></i> Reviews</a>
+                    <a href="#"><i class="fa fa-ticket"></i> Coupons</a>
+                    <a href="#"><i class="fa fa-warehouse"></i> Inventory</a>
+                    <a href="{{ url_for('admin_settings') }}" class="{% if active_page=='settings' %}active{% endif %}">
+                        <i class="fa fa-cog"></i> Settings
+                    </a>
+                    <a href="{{ url_for('logout') }}"><i class="fa fa-sign-out-alt"></i> Logout</a>
+                </div>
+            </aside>
+
+            <!-- MAIN CONTENT -->
+            <main class="profile-main">
+                {% block admin_content %}{% endblock %}
+            </main>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

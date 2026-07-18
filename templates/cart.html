@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}Cart - NEXOMART{% endblock %}
+{% block content %}
+<div class="container cart-page">
+    <h1>My Cart ({{ items|length }} item{% if items|length != 1 %}s{% endif %})</h1>
+
+    {% if items %}
+    <div class="cart-layout">
+        <div class="cart-items">
+            {% for item in items %}
+            <div class="cart-item">
+                <img src="{{ item.product.image }}" alt="{{ item.product.name }}" class="cart-img">
+                <div class="cart-item-info">
+                    <a href="{{ url_for('product_detail', pid=item.product.id) }}">
+                        <h3>{{ item.product.name }}</h3>
+                    </a>
+                    <p class="cart-brand">{{ item.product.brand }}</p>
+                    <p class="delivery-info"><i class="fa fa-truck"></i> Free Delivery</p>
+                    <div class="cart-item-actions">
+                        <form method="POST" action="{{ url_for('update_cart', item_id=item.id) }}" class="qty-form">
+                            <label>Qty:</label>
+                            <select name="quantity" onchange="this.form.submit()">
+                                {% for i in range(1,6) %}
+                                <option value="{{ i }}" {% if i == item.quantity %}selected{% endif %}>{{ i }}</option>
+                                {% endfor %}
+                            </select>
+                        </form>
+                        <a href="{{ url_for('remove_from_cart', item_id=item.id) }}" class="btn-remove">
+                            <i class="fa fa-trash"></i> Remove
+                        </a>
+                        <a href="{{ url_for('toggle_wishlist', pid=item.product.id) }}" class="btn-save">
+                            <i class="fa fa-heart"></i> Save for Later
+                        </a>
+                    </div>
+                </div>
+                <div class="cart-item-price">
+                    <p class="price-main">₹{{ "{:,.0f}".format(item.product.discounted_price * item.quantity) }}</p>
+                    {% if item.product.discount > 0 %}
+                    <p class="price-original">₹{{ "{:,.0f}".format(item.product.price * item.quantity) }}</p>
+                    <p class="price-save">₹{{ "{:,.0f}".format(item.product.savings * item.quantity) }} saved</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Order Summary -->
+        <div class="order-summary">
+            <h3>Price Details</h3>
+            <div class="summary-row">
+                <span>Price ({{ items|length }} items)</span>
+                <span>₹{{ "{:,.0f}".format(items|sum(attribute='product.price') * 1) }}</span>
+            </div>
+            <div class="summary-row green">
+                <span>Discount</span>
+                <span>-₹{{ "{:,.0f}".format(items|sum(attribute='product.price') - total) }}</span>
+            </div>
+            <div class="summary-row">
+                <span>Delivery Charges</span>
+                <span class="green">FREE</span>
+            </div>
+            <hr>
+            <div class="summary-row total">
+                <span>Total Amount</span>
+                <span>₹{{ "{:,.0f}".format(total) }}</span>
+            </div>
+            <p class="savings-msg">🎉 You save ₹{{ "{:,.0f}".format(items|sum(attribute='product.price') - total) }} on this order!</p>
+            <a href="{{ url_for('checkout') }}" class="btn btn-primary btn-block">
+                Proceed to Checkout →
+            </a>
+        </div>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="fa fa-shopping-cart fa-4x"></i>
+        <h3>Your cart is empty!</h3>
+        <p>Add items to get started</p>
+        <a href="{{ url_for('products') }}" class="btn btn-primary">Shop Now</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

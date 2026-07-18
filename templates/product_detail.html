@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+{% block title %}{{ product.name }} - NEXOMART{% endblock %}
+{% block content %}
+<div class="container product-detail-page">
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+        <a href="{{ url_for('index') }}">Home</a> /
+        <a href="{{ url_for('products', category=product.category.slug) }}">{{ product.category.name }}</a> /
+        <span>{{ product.name[:40] }}...</span>
+    </div>
+
+    <div class="detail-layout">
+        <!-- Image Section -->
+        <div class="detail-images">
+            <div class="main-image">
+                <img src="{{ product.image }}" alt="{{ product.name }}" id="mainImg">
+            </div>
+            {% if product.discount > 0 %}
+            <div class="discount-tag">{{ product.discount|int }}% OFF</div>
+            {% endif %}
+        </div>
+
+        <!-- Product Info -->
+        <div class="detail-info">
+            <p class="detail-brand">{{ product.brand }}</p>
+            <h1 class="detail-title">{{ product.name }}</h1>
+
+            <div class="detail-rating">
+                <span class="rating-badge large">{{ product.rating }} ★</span>
+                <span class="review-count">{{ product.review_count }} ratings & {{ reviews|length }} reviews</span>
+            </div>
+
+            <div class="detail-price">
+                <span class="price-main large">₹{{ "{:,.0f}".format(product.discounted_price) }}</span>
+                {% if product.discount > 0 %}
+                <span class="price-original">₹{{ "{:,.0f}".format(product.price) }}</span>
+                <span class="price-save">Save ₹{{ "{:,.0f}".format(product.savings) }}</span>
+                {% endif %}
+            </div>
+
+            {% if product.specifications %}
+            <div class="specs-box">
+                <h4>Key Specifications</h4>
+                {% for spec in product.specifications.split('|') %}
+                <p><i class="fa fa-check-circle"></i> {{ spec.strip() }}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="delivery-box">
+                <p><i class="fa fa-map-marker-alt"></i> Delivery to <strong>110001</strong></p>
+                <p><i class="fa fa-truck"></i> <strong>Free Delivery</strong> by {{ (product.created_at).__class__.today().strftime('%d %b') }}</p>
+                <p><i class="fa fa-undo"></i> 10 days return policy</p>
+            </div>
+
+            <div class="qty-section">
+                <label>Quantity:</label>
+                <select id="qtySelect">
+                    {% for i in range(1, 6) %}
+                    <option value="{{ i }}">{{ i }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-addcart" onclick="addToCartQty({{ product.id }})">
+                    <i class="fa fa-cart-plus"></i> Add to Cart
+                </button>
+                <a href="{{ url_for('checkout') }}" class="btn btn-buynow"
+                   onclick="addToCartQty({{ product.id }})">
+                    <i class="fa fa-bolt"></i> Buy Now
+                </a>
+                <button class="btn btn-wishlist {% if in_wishlist %}active{% endif %}"
+                        onclick="toggleWishlist({{ product.id }}, this)">
+                    <i class="fa{% if in_wishlist %}s{% endif %} fa-heart"></i>
+                </button>
+            </div>
+
+            {% if product.stock < 10 %}
+            <p class="stock-warning"><i class="fa fa-exclamation-triangle"></i> Only {{ product.stock }} left!</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Description -->
+    <div class="detail-section">
+        <h2>Product Description</h2>
+        <p>{{ product.description }}</p>
+    </div>
+
+    <!-- Reviews -->
+    <div class="detail-section">
+        <h2>Customer Reviews</h2>
+        <div class="reviews-layout">
+            <div class="rating-summary">
+                <div class="big-rating">{{ product.rating }}</div>
+                <div class="stars">
+                    {% for i in range(1, 6) %}
+                    <i class="fa fa-star {% if i <= product.rating|int %}filled{% endif %}"></i>
+                    {% endfor %}
+                </div>
+                <p>{{ product.review_count }} ratings</p>
+            </div>
+            <div class="reviews-list">
+                {% for r in reviews %}
+                <div class="review-card">
+                    <div class="review-header">
+                        <span class="review-rating">{{ r.rating }} ★</span>
+                        <span class="reviewer-name">{{ r.user.name }}</span>
+                        <span class="review-date">{{ r.created_at.strftime('%d %b %Y') }}</span>
+                    </div>
+                    <p>{{ r.comment }}</p>
+                </div>
+                {% else %}
+                <p>No reviews yet. Be the first to review!</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        {% if session.user_id %}
+        <div class="add-review">
+            <h3>Write a Review</h3>
+            <form method="POST" action="{{ url_for('add_review', pid=product.id) }}">
+                <div class="star-rating-input">
+                    {% for i in range(5, 0, -1) %}
+                    <input type="radio" name="rating" value="{{ i }}" id="star{{ i }}" required>
+                    <label for="star{{ i }}"><i class="fa fa-star"></i></label>
+                    {% endfor %}
+                </div>
+                <textarea name="comment" placeholder="Share your experience..." rows="3" required></textarea>
+                <button type="submit" class="btn btn-primary">Submit Review</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Related Products -->
+    {% if related %}
+    <div class="detail-section">
+        <h2>Similar Products</h2>
+        <div class="product-grid">
+            {% for p in related %}
+            {% include '_product_card.html' %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function addToCartQty(pid) {
+    const qty = document.getElementById('qtySelect').value;
+    const form = new FormData();
+    form.append('quantity', qty);
+    fetch(`/cart/add/${pid}`, { method: 'POST', body: form })
+        .then(r => r.json()).then(d => {
+            if (d.success) {
+                const badge = document.getElementById('cartBadge');
+                if (badge) badge.textContent = d.cart_count;
+                showToast('Added to cart!');
+            } else {
+                window.location.href = '/login';
+            }
+        });
+}
+function toggleWishlist(pid, btn) {
+    fetch(`/wishlist/toggle/${pid}`)
+        .then(r => r.json()).then(d => {
+            if (d.success) {
+                btn.innerHTML = d.added
+                    ? '<i class="fas fa-heart"></i>'
+                    : '<i class="far fa-heart"></i>';
+                btn.classList.toggle('active', d.added);
+                showToast(d.added ? '❤️ Added to wishlist' : 'Removed from wishlist');
+            }
+        });
+}
+</script>
+{% endblock %}

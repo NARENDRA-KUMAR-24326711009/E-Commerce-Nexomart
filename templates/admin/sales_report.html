@@ -1,0 +1,148 @@
+{% extends 'admin/_admin_base.html' %}
+{% block title %}Sales Report | NEXOMART Admin{% endblock %}
+
+{% block admin_content %}
+<div class="admin-page-header">
+    <h2>Sales Report</h2>
+    <a href="{{ url_for('admin_sales_pdf', start=start.strftime('%Y-%m-%d'), end=end.strftime('%Y-%m-%d')) }}"
+       class="btn btn-primary">
+        <i class="fa fa-file-pdf"></i> Export PDF
+    </a>
+</div>
+
+<form method="GET" class="filter-bar" id="dateFilterForm">
+    <div class="form-group">
+        <label>From</label>
+        <input type="date" name="start" value="{{ start.strftime('%Y-%m-%d') }}">
+    </div>
+    <div class="form-group">
+        <label>To</label>
+        <input type="date" name="end" value="{{ end.strftime('%Y-%m-%d') }}">
+    </div>
+    <div class="filter-actions">
+        <button type="submit" class="btn btn-primary"><i class="fa fa-filter"></i> Apply</button>
+        <a href="{{ url_for('admin_sales') }}" class="btn btn-outline">Reset</a>
+    </div>
+</form>
+
+<div class="filter-quick-ranges">
+    <button type="button" class="quick-range-btn" data-days="7">Last 7 days</button>
+    <button type="button" class="quick-range-btn" data-days="30">Last 30 days</button>
+    <button type="button" class="quick-range-btn" data-days="90">Last 90 days</button>
+</div>
+
+<div class="admin-stats">
+    <div class="stat-card accent-blue">
+        <i class="fa fa-shopping-bag"></i>
+        <h3>{{ summary.total_orders }}</h3>
+        <p>Orders in Period</p>
+    </div>
+    <div class="stat-card accent-red">
+        <i class="fa fa-times-circle"></i>
+        <h3>{{ summary.cancelled_orders }}</h3>
+        <p>Cancelled</p>
+    </div>
+    <div class="stat-card accent-green">
+        <i class="fa fa-rupee-sign"></i>
+        <h3>₹{{ "{:,.0f}".format(summary.total_revenue) }}</h3>
+        <p>Revenue</p>
+    </div>
+    <div class="stat-card accent-orange">
+        <i class="fa fa-receipt"></i>
+        <h3>₹{{ "{:,.0f}".format(summary.avg_order_value) }}</h3>
+        <p>Avg. Order Value</p>
+    </div>
+</div>
+
+<div class="chart-grid">
+    <div class="chart-card">
+        <h3>Revenue by Category</h3>
+        <p class="chart-sub">{{ start.strftime('%d %b %Y') }} – {{ end.strftime('%d %b %Y') }}</p>
+        <div class="chart-canvas-wrap"><canvas id="categoryChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+        <h3>Sales Trend</h3>
+        <p class="chart-sub">Daily revenue for the selected period</p>
+        <div class="chart-canvas-wrap"><canvas id="trendChart"></canvas></div>
+    </div>
+</div>
+
+<div class="admin-table-title"><h3><i class="fa fa-tags"></i> Category-wise Revenue</h3></div>
+<div class="admin-table-wrap">
+    <table class="admin-table">
+        <thead><tr><th>Category</th><th>Orders</th><th>Revenue</th></tr></thead>
+        <tbody>
+        {% for name, revenue, count in category_rows %}
+            <tr>
+                <td>{{ name }}</td>
+                <td>{{ count }}</td>
+                <td class="num">₹{{ "{:,.0f}".format(revenue) }}</td>
+            </tr>
+        {% else %}
+            <tr><td colspan="3" class="chart-empty">No sales recorded in this period</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="admin-table-title"><h3><i class="fa fa-list"></i> Orders in Period ({{ orders|length }})</h3></div>
+<div class="admin-table-wrap">
+    <table class="admin-table">
+        <thead><tr><th>Order ID</th><th>Date</th><th>Customer</th><th>Payment</th><th>Status</th><th>Amount</th></tr></thead>
+        <tbody>
+        {% for o in orders %}
+            <tr>
+                <td><a href="{{ url_for('order_detail', order_id=o.order_id) }}">{{ o.order_id }}</a></td>
+                <td>{{ o.created_at.strftime('%d %b %Y') }}</td>
+                <td>{{ o.user.name if o.user else '-' }}</td>
+                <td>{{ o.payment_method }}</td>
+                <td><span class="order-status status-{{ o.status.lower().replace(' ','') }}">{{ o.status }}</span></td>
+                <td class="num">₹{{ "{:,.0f}".format(o.total_amount) }}</td>
+            </tr>
+        {% else %}
+            <tr><td colspan="6" class="chart-empty">No orders in this period</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
+<script>
+const chartColors = ['#2874f0', '#fb641b', '#388e3c', '#ffca28', '#e53935', '#8e44ad', '#16a085', '#34495e'];
+const qs = '?start={{ start.strftime("%Y-%m-%d") }}&end={{ end.strftime("%Y-%m-%d") }}';
+
+fetch('/admin/api/sales_by_category' + qs).then(r => r.json()).then(data => {
+    new Chart(document.getElementById('categoryChart'), {
+        type: 'bar',
+        data: { labels: data.labels, datasets: [{ label: 'Revenue (₹)', data: data.revenue, backgroundColor: chartColors, borderRadius: 4 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+    });
+});
+
+fetch('/admin/api/sales_over_time' + qs).then(r => r.json()).then(data => {
+    new Chart(document.getElementById('trendChart'), {
+        type: 'line',
+        data: { labels: data.labels, datasets: [{ label: 'Revenue (₹)', data: data.revenue,
+            borderColor: '#2874f0', backgroundColor: 'rgba(40,116,240,.12)', fill: true, tension: .3, pointRadius: 2 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
+});
+
+// Quick range buttons
+document.querySelectorAll('.quick-range-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const days = parseInt(btn.dataset.days, 10);
+        const end = new Date();
+        const start = new Date();
+        start.setDate(end.getDate() - days);
+        const fmt = d => d.toISOString().split('T')[0];
+        const form = document.getElementById('dateFilterForm');
+        form.start.value = fmt(start);
+        form.end.value = fmt(end);
+        form.submit();
+    });
+});
+</script>
+{% endblock %}

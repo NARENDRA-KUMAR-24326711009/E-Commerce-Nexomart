@@ -1,0 +1,30 @@
+<div class="product-card">
+    {% if p.discount > 0 %}
+    <span class="badge-discount">{{ p.discount|int }}% OFF</span>
+    {% endif %}
+    <a href="{{ url_for('product_detail', pid=p.id) }}">
+        <div class="product-img-wrap">
+            <img src="{{ p.image }}" alt="{{ p.name }}" loading="lazy">
+        </div>
+        <div class="product-info">
+            <p class="product-brand">{{ p.brand }}</p>
+            <h3 class="product-name">{{ p.name[:50] }}{% if p.name|length > 50 %}...{% endif %}</h3>
+            <div class="product-rating">
+                <span class="rating-badge">{{ p.rating }} ★</span>
+                <span class="review-count">({{ p.review_count }})</span>
+            </div>
+            <div class="product-price">
+                <span class="price-main">₹{{ "{:,.0f}".format(p.discounted_price) }}</span>
+                {% if p.discount > 0 %}
+                <span class="price-original">₹{{ "{:,.0f}".format(p.price) }}</span>
+                {% endif %}
+            </div>
+            {% if p.discount > 20 %}
+            <p class="free-delivery">✓ Free Delivery</p>
+            {% endif %}
+        </div>
+    </a>
+    <button class="btn-add-cart" onclick="addToCart({{ p.id }}, this)">
+        <i class="fa fa-cart-plus"></i> Add to Cart
+    </button>
+</div>

@@ -1,0 +1,255 @@
+{% extends 'base.html' %}
+{% block title %}Checkout - NEXOMART{% endblock %}
+{% block content %}
+<div class="container checkout-page">
+    <h1>Checkout</h1>
+    <div class="checkout-layout">
+        <div class="checkout-form">
+            <form method="POST" id="checkoutForm">
+                <!-- Delivery Address -->
+                <div class="checkout-section">
+                    <h2><span class="step-num">1</span> Delivery Address</h2>
+                    {% if addresses %}
+                    <div class="saved-addresses">
+                        {% for addr in addresses %}
+                        <label class="address-option">
+                            <input type="radio" name="saved_address" value="{{ addr.id }}"
+                                   data-name="{{ addr.name }}" data-phone="{{ addr.phone }}"
+                                   data-address="{{ addr.address_line }}" data-city="{{ addr.city }}"
+                                   data-state="{{ addr.state }}" data-pincode="{{ addr.pincode }}"
+                                   onchange="fillSavedAddress(this)">
+                            <div>
+                                <strong>{{ addr.name }}</strong> <span class="addr-type">{{ addr.address_type }}</span>
+                                <p>{{ addr.address_line }}, {{ addr.city }}, {{ addr.state }} - {{ addr.pincode }}</p>
+                                <p>📱 {{ addr.phone }}</p>
+                            </div>
+                        </label>
+                        {% endfor %}
+                    </div>
+                    <p class="or-divider">— or enter new address —</p>
+                    {% endif %}
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" name="name" id="ckName" placeholder="Enter full name" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input type="text" name="phone" id="ckPhone" placeholder="10-digit mobile number" required>
+                        </div>
+                        <div class="form-group full">
+                            <label>Address</label>
+                            <textarea name="address" id="ckAddress" rows="2" placeholder="House No., Building, Street, Area" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>City</label>
+                            <input type="text" name="city" id="ckCity" placeholder="City" required>
+                        </div>
+                        <div class="form-group">
+                            <label>State</label>
+                            <input type="text" name="state" id="ckState" placeholder="State" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Pincode</label>
+                            <input type="text" name="pincode" id="ckPincode" placeholder="6-digit pincode" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Method -->
+                <div class="checkout-section">
+                    <h2><span class="step-num">2</span> Payment Method</h2>
+
+                    {% if not settings.razorpay_enabled %}
+                    <div class="flash flash-warning" style="margin-bottom:14px;">
+                        <i class="fa fa-info-circle"></i>
+                        Online payments aren't configured yet — only Cash on Delivery is available
+                        right now. (Admin can add Razorpay test keys under Admin → Settings.)
+                    </div>
+                    {% endif %}
+
+                    <div class="payment-options">
+                        <label class="payment-option">
+                            <input type="radio" name="payment" value="UPI" {% if not settings.razorpay_enabled %}disabled{% else %}checked{% endif %}>
+                            <i class="fa fa-mobile-alt"></i> UPI (GPay, PhonePe, Paytm)
+                        </label>
+                        <label class="payment-option">
+                            <input type="radio" name="payment" value="Card" {% if not settings.razorpay_enabled %}disabled{% endif %}>
+                            <i class="fa fa-credit-card"></i> Credit/Debit Card
+                        </label>
+                        <label class="payment-option">
+                            <input type="radio" name="payment" value="NetBanking" {% if not settings.razorpay_enabled %}disabled{% endif %}>
+                            <i class="fa fa-university"></i> Net Banking
+                        </label>
+                        <label class="payment-option">
+                            <input type="radio" name="payment" value="COD" {% if not settings.razorpay_enabled %}checked{% endif %}>
+                            <i class="fa fa-money-bill-wave"></i> Cash on Delivery
+                        </label>
+                    </div>
+                    {% if settings.razorpay_enabled %}
+                    <p class="field-help" style="margin-top:10px;">
+                        <i class="fa fa-shield-alt"></i> UPI / Card / NetBanking open a secure
+                        Razorpay test-mode payment window.
+                    </p>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block btn-lg" id="placeOrderBtn">
+                    <i class="fa fa-lock"></i> Place Order Securely — ₹{{ "{:,.0f}".format(total) }}
+                </button>
+                <p id="checkoutError" class="field-help" style="color:var(--red); display:none; margin-top:10px;"></p>
+            </form>
+        </div>
+
+        <!-- Order Summary -->
+        <div class="checkout-summary">
+            <h3>Order Summary</h3>
+            {% for item in items %}
+            <div class="summary-item">
+                <img src="{{ item.product.image }}" alt="">
+                <div>
+                    <p>{{ item.product.name[:40] }}...</p>
+                    <p>Qty: {{ item.quantity }} × ₹{{ "{:,.0f}".format(item.product.discounted_price) }}</p>
+                </div>
+                <strong>₹{{ "{:,.0f}".format(item.product.discounted_price * item.quantity) }}</strong>
+            </div>
+            {% endfor %}
+            <hr>
+            <div class="summary-row total">
+                <span>Total</span>
+                <span>₹{{ "{:,.0f}".format(total) }}</span>
+            </div>
+            <div class="safe-badge">
+                <i class="fa fa-shield-alt"></i> 100% Safe & Secure
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+function fillSavedAddress(radio) {
+    document.getElementById('ckName').value = radio.dataset.name;
+    document.getElementById('ckPhone').value = radio.dataset.phone;
+    document.getElementById('ckAddress').value = radio.dataset.address;
+    document.getElementById('ckCity').value = radio.dataset.city;
+    document.getElementById('ckState').value = radio.dataset.state;
+    document.getElementById('ckPincode').value = radio.dataset.pincode;
+}
+
+const checkoutForm = document.getElementById('checkoutForm');
+const placeOrderBtn = document.getElementById('placeOrderBtn');
+const checkoutError = document.getElementById('checkoutError');
+
+function showCheckoutError(msg) {
+    checkoutError.textContent = msg;
+    checkoutError.style.display = 'block';
+}
+
+function setLoading(isLoading) {
+    placeOrderBtn.disabled = isLoading;
+    placeOrderBtn.innerHTML = isLoading
+        ? '<i class="fa fa-spinner fa-spin"></i> Processing...'
+        : '<i class="fa fa-lock"></i> Place Order Securely — ₹{{ "{:,.0f}".format(total) }}';
+}
+
+checkoutForm.addEventListener('submit', function (e) {
+    const paymentMethod = checkoutForm.payment.value;
+    checkoutError.style.display = 'none';
+
+    // Cash on Delivery -> let the normal form POST go through to /checkout
+    if (paymentMethod === 'COD') {
+        return;
+    }
+
+    // Online payment -> intercept and run the Razorpay flow
+    e.preventDefault();
+
+    if (!checkoutForm.checkValidity()) {
+        checkoutForm.reportValidity();
+        return;
+    }
+
+    const payload = {
+        name: checkoutForm.name.value,
+        phone: checkoutForm.phone.value,
+        address: checkoutForm.address.value,
+        city: checkoutForm.city.value,
+        state: checkoutForm.state.value,
+        pincode: checkoutForm.pincode.value,
+        payment: paymentMethod
+    };
+
+    setLoading(true);
+
+    fetch('/payment/create_order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) {
+                setLoading(false);
+                showCheckoutError(data.message || 'Could not start payment. Please try again.');
+                return;
+            }
+
+            const options = {
+                key: data.key_id,
+                amount: data.amount,
+                currency: data.currency,
+                name: 'NEXOMART',
+                description: 'Order Payment (Test Mode)',
+                order_id: data.razorpay_order_id,
+                prefill: { name: data.name, email: data.email, contact: data.contact },
+                theme: { color: '#2874f0' },
+                handler: function (response) {
+                    fetch('/payment/verify', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(response)
+                    })
+                        .then(r => r.json())
+                        .then(verifyData => {
+                            if (verifyData.success) {
+                                window.location.href = '/order/' + verifyData.order_id;
+                            } else {
+                                setLoading(false);
+                                showCheckoutError(verifyData.message || 'Payment verification failed.');
+                            }
+                        });
+                },
+                modal: {
+                    ondismiss: function () {
+                        setLoading(false);
+                        showCheckoutError('Payment popup closed. Your cart is unchanged — you can try again.');
+                    }
+                }
+            };
+
+            const rzp = new Razorpay(options);
+            rzp.on('payment.failed', function (response) {
+                fetch('/payment/failed', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        razorpay_order_id: response.error.metadata.order_id,
+                        razorpay_payment_id: response.error.metadata.payment_id,
+                        description: response.error.description
+                    })
+                });
+                setLoading(false);
+                showCheckoutError('Payment failed: ' + response.error.description);
+            });
+            rzp.open();
+        })
+        .catch(() => {
+            setLoading(false);
+            showCheckoutError('Network error while starting payment. Please try again.');
+        });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}Order {{ order.order_id }} - NEXOMART{% endblock %}
+{% block content %}
+<div class="container order-detail-page">
+    <div class="order-detail-header">
+        <div>
+            <h1>Order Details</h1>
+            <p class="order-id-large">{{ order.order_id }}</p>
+        </div>
+        <span class="order-status status-{{ order.status.lower().replace(' ','') }} large">
+            {{ order.status }}
+        </span>
+    </div>
+
+    <!-- Tracking Timeline -->
+    <div class="tracking-section">
+        <h2><i class="fa fa-map-marker-alt"></i> Order Tracking</h2>
+        <div class="tracking-timeline">
+            {% for label, time, done in steps %}
+            <div class="tracking-step {% if done %}done{% endif %} {% if loop.last and done %}current{% endif %}">
+                <div class="step-dot">
+                    {% if done %}<i class="fa fa-check"></i>{% else %}<i class="fa fa-circle"></i>{% endif %}
+                </div>
+                <div class="step-content">
+                    <h4>{{ label }}</h4>
+                    {% if done and time %}
+                    <p>{{ time.strftime('%d %b %Y, %I:%M %p') }}</p>
+                    {% else %}
+                    <p>Pending</p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% if order.status not in ['Delivered', 'Cancelled'] %}
+        <div class="estimated-delivery">
+            <i class="fa fa-truck"></i>
+            <strong>Estimated Delivery: {{ order.estimated_delivery.strftime('%A, %d %B %Y') }}</strong>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Order Items -->
+    <div class="detail-section">
+        <h2>Items Ordered</h2>
+        {% for item in order.items %}
+        <div class="order-item-detail">
+            <img src="{{ item.product.image }}" alt="">
+            <div class="item-info">
+                <a href="{{ url_for('product_detail', pid=item.product.id) }}">
+                    <h3>{{ item.product.name }}</h3>
+                </a>
+                <p>Brand: {{ item.product.brand }}</p>
+                <p>Qty: {{ item.quantity }}</p>
+            </div>
+            <div class="item-price">
+                <p>₹{{ "{:,.0f}".format(item.price) }}</p>
+                <p class="item-total">₹{{ "{:,.0f}".format(item.price * item.quantity) }}</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Delivery & Payment -->
+    <div class="info-cards">
+        <div class="info-card">
+            <h3><i class="fa fa-map-marker-alt"></i> Delivery Address</h3>
+            <p>{{ order.address }}</p>
+        </div>
+        <div class="info-card">
+            <h3><i class="fa fa-credit-card"></i> Payment</h3>
+            <p>{{ order.payment_method }}</p>
+            <p class="price-main">Total: ₹{{ "{:,.0f}".format(order.total_amount) }}</p>
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="order-actions">
+        <a href="{{ url_for('order_invoice_pdf', order_id=order.order_id) }}" class="btn btn-outline">
+            <i class="fa fa-file-pdf"></i> Download Invoice
+        </a>
+        {% if order.status in ['Confirmed', 'Processing'] %}
+        <a href="{{ url_for('cancel_order', order_id=order.order_id) }}" class="btn btn-danger-outline"
+           onclick="return confirm('Are you sure you want to cancel this order?')">
+            <i class="fa fa-times"></i> Cancel Order
+        </a>
+        {% endif %}
+        {% if order.status == 'Delivered' %}
+        <a href="{{ url_for('products') }}" class="btn btn-primary">
+            <i class="fa fa-redo"></i> Buy Again
+        </a>
+        {% endif %}
+        <a href="{{ url_for('orders') }}" class="btn btn-outline">
+            <i class="fa fa-arrow-left"></i> All Orders
+        </a>
+    </div>
+</div>
+{% endblock %}

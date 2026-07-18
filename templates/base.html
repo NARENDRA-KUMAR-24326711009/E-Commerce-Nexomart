@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}NEXOMART - India ka Naya Bazaar{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+    <div class="header-top">
+        <div class="container header-inner">
+            <!-- Logo -->
+            <a href="{{ url_for('index') }}" class="logo">
+                <span class="logo-text">NEXO<span class="logo-accent">MART</span></span>
+                <span class="logo-tagline">AI Shopping</span>
+            </a>
+
+            <!-- Search Bar -->
+            <div class="search-wrapper">
+                <form action="{{ url_for('products') }}" method="GET" class="search-form">
+                    <div class="search-box">
+                        <i class="fa fa-search search-icon"></i>
+                        <input type="text" name="q" id="searchInput" placeholder="Search for products, brands and more..."
+                               value="{{ request.args.get('q','') }}" autocomplete="off">
+                        <button type="submit" class="search-btn">Search</button>
+                    </div>
+                </form>
+                <div id="searchSuggestions" class="search-suggestions"></div>
+            </div>
+
+            <!-- Nav Actions -->
+            <nav class="nav-actions">
+                {% if session.user_id %}
+                <div class="nav-item dropdown">
+                    <a href="{{ url_for('profile') }}" class="nav-link">
+                        <i class="fa fa-user"></i>
+                        <span>{{ session.user_name.split()[0] }}</span>
+                        <i class="fa fa-chevron-down tiny"></i>
+                    </a>
+                    <div class="dropdown-menu">
+                        {% if session.user_role == 'admin' %}
+                        <a href="{{ url_for('admin_dashboard') }}"><i class="fa fa-chart-line"></i> Admin Dashboard</a>
+                        <hr>
+                        {% endif %}
+                        <a href="{{ url_for('profile') }}"><i class="fa fa-user-circle"></i> My Profile</a>
+                        <a href="{{ url_for('orders') }}"><i class="fa fa-box"></i> My Orders</a>
+                        <a href="{{ url_for('wishlist') }}"><i class="fa fa-heart"></i> Wishlist</a>
+                        <hr>
+                        <a href="{{ url_for('logout') }}"><i class="fa fa-sign-out-alt"></i> Logout</a>
+                    </div>
+                </div>
+                {% else %}
+                <a href="{{ url_for('login') }}" class="nav-link">
+                    <i class="fa fa-user"></i> <span>Login</span>
+                </a>
+                {% endif %}
+
+                <a href="{{ url_for('wishlist') }}" class="nav-link">
+                    <i class="fa fa-heart"></i> <span>Wishlist</span>
+                </a>
+
+                <a href="{{ url_for('cart') }}" class="nav-link cart-link">
+                    <i class="fa fa-shopping-cart"></i>
+                    <span>Cart</span>
+                    {% if cart_count > 0 %}
+                    <span class="cart-badge" id="cartBadge">{{ cart_count }}</span>
+                    {% endif %}
+                </a>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Category Bar -->
+    <div class="category-bar">
+        <div class="container category-list">
+            <a href="{{ url_for('products') }}" class="cat-link">All</a>
+            {% for cat in all_categories %}
+            <a href="{{ url_for('products', category=cat.slug) }}" class="cat-link">
+                {{ cat.icon }} {{ cat.name }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</header>
+
+<!-- FLASH MESSAGES -->
+<div class="flash-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+    <div class="flash flash-{{ cat }}">
+        <i class="fa fa-{% if cat == 'success' %}check-circle{% elif cat == 'danger' %}exclamation-circle{% else %}info-circle{% endif %}"></i>
+        {{ msg }}
+        <button onclick="this.parentElement.remove()" class="flash-close">×</button>
+    </div>
+    {% endfor %}
+    {% endwith %}
+</div>
+
+<!-- MAIN CONTENT -->
+<main class="main-content">
+    {% block content %}{% endblock %}
+</main>
+
+<!-- FOOTER -->
+<footer class="footer">
+    <div class="container footer-grid">
+        <div>
+            <h4>NEXOMART</h4>
+            <p>India's AI-powered shopping destination. Best prices, fastest delivery.</p>
+            <div class="social-links">
+                <a href="#"><i class="fab fa-facebook"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+                <a href="#"><i class="fab fa-youtube"></i></a>
+            </div>
+        </div>
+        <div>
+            <h4>About</h4>
+            <ul>
+                <li><a href="#">About Us</a></li>
+                <li><a href="#">Careers</a></li>
+                <li><a href="#">Press</a></li>
+                <li><a href="#">Blog</a></li>
+            </ul>
+        </div>
+        <div>
+            <h4>Help</h4>
+            <ul>
+                <li><a href="{{ url_for('orders') }}">Track Order</a></li>
+                <li><a href="#">Returns</a></li>
+                <li><a href="#">FAQ</a></li>
+                <li><a href="#">Contact Us</a></li>
+            </ul>
+        </div>
+        <div>
+            <h4>Policy</h4>
+            <ul>
+                <li><a href="#">Return Policy</a></li>
+                <li><a href="#">Terms of Use</a></li>
+                <li><a href="#">Privacy</a></li>
+                <li><a href="#">Security</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <div class="container">
+            <p>© {{ current_year }} NEXOMART Technologies Pvt. Ltd. | Made with ❤️ in India</p>
+        </div>
+    </div>
+</footer>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

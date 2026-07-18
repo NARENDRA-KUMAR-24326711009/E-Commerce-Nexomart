@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block title %}Products - NEXOMART{% endblock %}
+{% block content %}
+<div class="container products-page">
+    <div class="products-layout">
+        <!-- Filters Sidebar -->
+        <aside class="filters-sidebar">
+            <h3>Filters</h3>
+            <form method="GET" id="filterForm">
+                <input type="hidden" name="q" value="{{ q }}">
+
+                <div class="filter-section">
+                    <h4>Category</h4>
+                    {% for cat in categories %}
+                    <label class="filter-label">
+                        <input type="radio" name="category" value="{{ cat.slug }}"
+                               {% if selected_cat == cat.slug %}checked{% endif %}
+                               onchange="document.getElementById('filterForm').submit()">
+                        {{ cat.icon }} {{ cat.name }}
+                    </label>
+                    {% endfor %}
+                    <label class="filter-label">
+                        <input type="radio" name="category" value=""
+                               {% if not selected_cat %}checked{% endif %}
+                               onchange="document.getElementById('filterForm').submit()">
+                        All Categories
+                    </label>
+                </div>
+
+                <div class="filter-section">
+                    <h4>Price Range</h4>
+                    <div class="price-inputs">
+                        <input type="number" name="min_price" placeholder="Min ₹"
+                               value="{{ request.args.get('min_price','') }}">
+                        <span>—</span>
+                        <input type="number" name="max_price" placeholder="Max ₹"
+                               value="{{ request.args.get('max_price','') }}">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">Apply Filters</button>
+                <a href="{{ url_for('products') }}" class="btn btn-outline btn-block">Clear All</a>
+            </form>
+        </aside>
+
+        <!-- Products Main -->
+        <div class="products-main">
+            <div class="products-toolbar">
+                <p class="results-count">{{ products|length }} results {% if q %}for "{{ q }}"{% endif %}</p>
+                <div class="sort-bar">
+                    <span>Sort by:</span>
+                    {% for value, label in [('popular','Popularity'),('price_asc','Low to High'),('price_desc','High to Low'),('newest','Newest')] %}
+                    <a href="{{ url_for('products', q=q, category=selected_cat, sort=value) }}"
+                       class="sort-btn {% if sort == value %}active{% endif %}">{{ label }}</a>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {% if products %}
+            <div class="product-grid">
+                {% for p in products %}
+                {% include '_product_card.html' %}
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <i class="fa fa-search fa-3x"></i>
+                <h3>No products found</h3>
+                <p>Try different keywords or filters</p>
+                <a href="{{ url_for('products') }}" class="btn btn-primary">Browse All</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

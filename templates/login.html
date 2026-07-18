@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Login - NEXOMART{% endblock %}
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card">
+        <div class="auth-left">
+            <h2>Login</h2>
+            <p>Get access to your Orders, Wishlist and Recommendations</p>
+        </div>
+        <div class="auth-right">
+            <form method="POST">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" placeholder="Enter your email" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" name="password" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Login</button>
+            </form>
+            <p class="auth-switch">New to NEXOMART? <a href="{{ url_for('register') }}">Create Account</a></p>
+            <div class="demo-login">
+                <p>🎯 Demo: <strong>demo@nexomart.com</strong> / <strong>demo123</strong></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

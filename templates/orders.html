@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}My Orders - NEXOMART{% endblock %}
+{% block content %}
+<div class="container orders-page">
+    <h1>My Orders</h1>
+    {% if orders %}
+    <div class="orders-list">
+        {% for order in orders %}
+        <div class="order-card">
+            <div class="order-header">
+                <div>
+                    <span class="order-id">{{ order.order_id }}</span>
+                    <span class="order-status status-{{ order.status.lower().replace(' ','') }}">{{ order.status }}</span>
+                </div>
+                <div class="order-meta">
+                    <span><i class="fa fa-calendar"></i> {{ order.created_at.strftime('%d %b %Y') }}</span>
+                    <span><i class="fa fa-rupee-sign"></i> ₹{{ "{:,.0f}".format(order.total_amount) }}</span>
+                    <span>{{ order.payment_method }}</span>
+                </div>
+            </div>
+            <div class="order-items-preview">
+                {% for item in order.items[:2] %}
+                <div class="order-item-row">
+                    <img src="{{ item.product.image }}" alt="">
+                    <div>
+                        <p>{{ item.product.name[:60] }}</p>
+                        <p>Qty: {{ item.quantity }} × ₹{{ "{:,.0f}".format(item.price) }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+                {% if order.items|length > 2 %}
+                <p class="more-items">+{{ order.items|length - 2 }} more items</p>
+                {% endif %}
+            </div>
+            <div class="order-footer">
+                <a href="{{ url_for('order_detail', order_id=order.order_id) }}" class="btn btn-outline">
+                    <i class="fa fa-search"></i> Track Order
+                </a>
+                <a href="{{ url_for('order_invoice_pdf', order_id=order.order_id) }}" class="btn btn-outline">
+                    <i class="fa fa-file-pdf"></i> Invoice
+                </a>
+                {% if order.status in ['Confirmed', 'Processing'] %}
+                <a href="{{ url_for('cancel_order', order_id=order.order_id) }}" class="btn btn-danger-outline"
+                   onclick="return confirm('Cancel this order?')">
+                    Cancel Order
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="fa fa-box-open fa-4x"></i>
+        <h3>No orders yet</h3>
+        <p>Your orders will appear here</p>
+        <a href="{{ url_for('products') }}" class="btn btn-primary">Start Shopping</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends 'admin/_admin_base.html' %}
+{% block title %}Settings | NEXOMART Admin{% endblock %}
+
+{% block admin_content %}
+<div class="admin-page-header">
+    <h2>Settings</h2>
+</div>
+
+<div class="settings-card">
+    <h2><i class="fa fa-credit-card"></i> Razorpay Payment Gateway</h2>
+    <p class="help-text">
+        Connect your own Razorpay <strong>Test Mode</strong> keys so customers can pay via
+        UPI / Card / NetBanking at checkout. Get free test keys from your
+        <strong>Razorpay Dashboard → Settings → API Keys</strong> (Test Mode toggle ON).
+        Cash on Delivery always works, with or without this setup.
+    </p>
+
+    {% if settings.razorpay_enabled %}
+    <span class="key-status on"><i class="fa fa-check-circle"></i> Razorpay is configured</span>
+    {% else %}
+    <span class="key-status off"><i class="fa fa-exclamation-triangle"></i> Razorpay not configured yet</span>
+    {% endif %}
+
+    <form method="POST">
+        <div class="form-group">
+            <label>Razorpay Key ID</label>
+            <input type="text" name="razorpay_key_id" placeholder="rzp_test_xxxxxxxxxxxxxx"
+                   value="{{ settings.razorpay_key_id }}">
+            <p class="field-help">Starts with <code>rzp_test_</code> while in Test Mode.</p>
+        </div>
+        <div class="form-group">
+            <label>Razorpay Key Secret</label>
+            <input type="password" name="razorpay_key_secret" placeholder="Your key secret"
+                   value="{{ settings.razorpay_key_secret }}">
+            <p class="field-help">Never share this publicly — it is stored server-side only.</p>
+        </div>
+        <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> Save Settings</button>
+    </form>
+
+    <div class="settings-note">
+        <i class="fa fa-flask"></i> <strong>Testing tip:</strong> In Razorpay Test Mode, use card
+        number <strong>4111 1111 1111 1111</strong>, any future expiry, any CVV, and any name to
+        simulate a successful payment. Use UPI ID <strong>success@razorpay</strong> to simulate a
+        successful UPI payment, or <strong>failure@razorpay</strong> to simulate a failed one.
+    </div>
+</div>
+{% endblock %}

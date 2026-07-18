@@ -1,0 +1,76 @@
+{% extends 'admin/_admin_base.html' %}
+{% block title %}Transactions | NEXOMART Admin{% endblock %}
+
+{% block admin_content %}
+<div class="admin-page-header">
+    <h2>Transactions</h2>
+</div>
+
+<div class="admin-stats">
+    <div class="stat-card accent-green">
+        <i class="fa fa-check-circle"></i>
+        <h3>{{ totals.success }}</h3>
+        <p>Successful Payments</p>
+    </div>
+    <div class="stat-card accent-red">
+        <i class="fa fa-times-circle"></i>
+        <h3>{{ totals.failed }}</h3>
+        <p>Failed Payments</p>
+    </div>
+    <div class="stat-card accent-orange">
+        <i class="fa fa-truck"></i>
+        <h3>{{ totals.cod }}</h3>
+        <p>Cash on Delivery</p>
+    </div>
+</div>
+
+<form method="GET" class="filter-bar">
+    <div class="form-group">
+        <label>Filter by Status</label>
+        <select name="status" onchange="this.form.submit()">
+            <option value="" {% if not status_filter %}selected{% endif %}>All</option>
+            <option value="success" {% if status_filter=='success' %}selected{% endif %}>Success</option>
+            <option value="failed" {% if status_filter=='failed' %}selected{% endif %}>Failed</option>
+            <option value="cod" {% if status_filter=='cod' %}selected{% endif %}>COD</option>
+            <option value="created" {% if status_filter=='created' %}selected{% endif %}>Pending / Created</option>
+        </select>
+    </div>
+</form>
+
+<div class="admin-table-wrap">
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Method</th>
+                <th>Razorpay Payment ID</th>
+                <th>Status</th>
+                <th>Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for t in transactions %}
+            <tr>
+                <td>{{ t.created_at.strftime('%d %b %Y, %I:%M %p') }}</td>
+                <td>
+                    {% if t.order %}
+                    <a href="{{ url_for('order_detail', order_id=t.order.order_id) }}">{{ t.order.order_id }}</a>
+                    {% else %}
+                    <span style="color:var(--gray2)">— (abandoned)</span>
+                    {% endif %}
+                </td>
+                <td>{{ t.user.name if t.user else '-' }}</td>
+                <td>{{ t.method }}</td>
+                <td>{{ t.razorpay_payment_id or '-' }}</td>
+                <td><span class="txn-badge txn-{{ t.status }}">{{ t.status }}</span></td>
+                <td class="num">₹{{ "{:,.0f}".format(t.amount) }}</td>
+            </tr>
+        {% else %}
+            <tr><td colspan="7" class="chart-empty">No transactions found</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

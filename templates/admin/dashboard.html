@@ -1,0 +1,186 @@
+{% extends 'admin/_admin_base.html' %}
+{% block title %}Admin Dashboard | NEXOMART{% endblock %}
+
+{% block admin_content %}
+<div class="admin-page-header">
+    <h2>Dashboard Overview</h2>
+    <a href="{{ url_for('admin_sales') }}" class="btn btn-outline">
+        <i class="fa fa-chart-bar"></i> Full Sales Report
+    </a>
+</div>
+
+<div class="admin-stats">
+    <div class="stat-card accent-blue">
+        <i class="fa fa-shopping-bag"></i>
+        <h3>{{ total_orders }}</h3>
+        <p>Total Orders</p>
+    </div>
+    <div class="stat-card accent-green">
+        <i class="fa fa-users"></i>
+        <h3>{{ total_customers }}</h3>
+        <p>Customers</p>
+    </div>
+    <div class="stat-card accent-orange">
+        <i class="fa fa-box"></i>
+        <h3>{{ total_products }}</h3>
+        <p>Products</p>
+    </div>
+    <div class="stat-card accent-red">
+        <i class="fa fa-rupee-sign"></i>
+        <h3>₹{{ "{:,.0f}".format(total_revenue) }}</h3>
+        <p>Total Revenue</p>
+    </div>
+</div>
+
+<div class="chart-grid">
+    <div class="chart-card">
+        <h3>Revenue by Category</h3>
+        <p class="chart-sub">Last 30 days, excluding cancelled orders</p>
+        <div class="chart-canvas-wrap"><canvas id="categoryChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+        <h3>Order Status Split</h3>
+        <p class="chart-sub">Last 30 days</p>
+        <div class="chart-canvas-wrap"><canvas id="statusChart"></canvas></div>
+    </div>
+</div>
+
+<div class="chart-grid two-col">
+    <div class="chart-card">
+        <h3>Sales Trend</h3>
+        <p class="chart-sub">Daily revenue, last 30 days</p>
+        <div class="chart-canvas-wrap short"><canvas id="trendChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+        <h3>Payment Outcomes</h3>
+        <p class="chart-sub">Success vs Failed vs COD (last 30 days)</p>
+        <div class="chart-canvas-wrap short"><canvas id="txnChart"></canvas></div>
+    </div>
+</div>
+
+<div class="admin-table-title"><h3><i class="fa fa-trophy"></i> Top Selling Products (30 days)</h3></div>
+<div class="admin-table-wrap">
+    <table class="admin-table">
+        <thead><tr><th>Product</th><th>Units Sold</th><th>Revenue</th></tr></thead>
+        <tbody>
+        {% for name, qty, revenue in top_products %}
+            <tr>
+                <td>{{ name }}</td>
+                <td>{{ qty }}</td>
+                <td class="num">₹{{ "{:,.0f}".format(revenue) }}</td>
+            </tr>
+        {% else %}
+            <tr><td colspan="3" class="chart-empty">No sales recorded in this period yet</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="admin-table-title"><h3><i class="fa fa-clock"></i> Recent Orders</h3></div>
+<div class="admin-table-wrap">
+    <table class="admin-table">
+        <thead><tr><th>Order ID</th><th>Customer</th><th>Date</th><th>Payment</th><th>Status</th><th>Amount</th></tr></thead>
+        <tbody>
+        {% for o in recent_orders %}
+            <tr>
+                <td><a href="{{ url_for('order_detail', order_id=o.order_id) }}">{{ o.order_id }}</a></td>
+                <td>{{ o.user.name if o.user else '-' }}</td>
+                <td>{{ o.created_at.strftime('%d %b %Y') }}</td>
+                <td>{{ o.payment_method }}</td>
+                <td><span class="order-status status-{{ o.status.lower().replace(' ','') }}">{{ o.status }}</span></td>
+                <td class="num">₹{{ "{:,.0f}".format(o.total_amount) }}</td>
+            </tr>
+        {% else %}
+            <tr><td colspan="6" class="chart-empty">No orders yet</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="admin-table-title"><h3><i class="fa fa-bolt"></i> Recent Activity</h3></div>
+<div class="order-card">
+    <div class="order-items-preview">
+        {% for t in recent_transactions %}
+        <div class="activity-feed-item">
+            <i class="fa fa-{% if t.status == 'success' %}check-circle{% elif t.status == 'failed' %}times-circle{% else %}truck{% endif %}"></i>
+            <div>
+                <p class="activity-text">
+                    {{ t.user.name if t.user else 'A customer' }} —
+                    {% if t.status == 'success' %}paid ₹{{ "{:,.0f}".format(t.amount) }} via {{ t.method }}
+                    {% elif t.status == 'failed' %}payment of ₹{{ "{:,.0f}".format(t.amount) }} failed ({{ t.method }})
+                    {% else %}placed a Cash on Delivery order of ₹{{ "{:,.0f}".format(t.amount) }}{% endif %}
+                </p>
+                <p class="activity-time">{{ t.created_at.strftime('%d %b %Y, %I:%M %p') }}</p>
+            </div>
+        </div>
+        {% endfor %}
+        {% for u in recent_users %}
+        <div class="activity-feed-item">
+            <i class="fa fa-user-plus"></i>
+            <div>
+                <p class="activity-text">New user registered — {{ u.name }}</p>
+                <p class="activity-time">{{ u.created_at.strftime('%d %b %Y, %I:%M %p') }}</p>
+            </div>
+        </div>
+        {% endfor %}
+        {% for r in recent_reviews %}
+        <div class="activity-feed-item">
+            <i class="fa fa-star"></i>
+            <div>
+                <p class="activity-text">{{ r.user.name if r.user else 'A customer' }} left a {{ r.rating }}★ review on {{ r.product.name if r.product else 'a product' }}</p>
+                <p class="activity-time">{{ r.created_at.strftime('%d %b %Y, %I:%M %p') }}</p>
+            </div>
+        </div>
+        {% endfor %}
+        {% if not recent_transactions and not recent_users and not recent_reviews %}
+        <p class="chart-empty">No recent activity yet</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
+<script>
+const chartColors = ['#2874f0', '#fb641b', '#388e3c', '#ffca28', '#e53935', '#8e44ad', '#16a085', '#34495e'];
+
+function loadJSON(url, render) {
+    fetch(url).then(r => r.json()).then(render).catch(() => {});
+}
+
+loadJSON('/admin/api/sales_by_category', data => {
+    new Chart(document.getElementById('categoryChart'), {
+        type: 'bar',
+        data: { labels: data.labels, datasets: [{ label: 'Revenue (₹)', data: data.revenue, backgroundColor: chartColors, borderRadius: 4 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } } }
+    });
+});
+
+loadJSON('/admin/api/order_status', data => {
+    new Chart(document.getElementById('statusChart'), {
+        type: 'doughnut',
+        data: { labels: data.labels, datasets: [{ data: data.counts, backgroundColor: chartColors }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } }
+    });
+});
+
+loadJSON('/admin/api/sales_over_time', data => {
+    new Chart(document.getElementById('trendChart'), {
+        type: 'line',
+        data: { labels: data.labels, datasets: [{ label: 'Revenue (₹)', data: data.revenue,
+            borderColor: '#2874f0', backgroundColor: 'rgba(40,116,240,.12)', fill: true, tension: .3, pointRadius: 2 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+    });
+});
+
+loadJSON('/admin/api/transaction_status', data => {
+    new Chart(document.getElementById('txnChart'), {
+        type: 'doughnut',
+        data: { labels: data.labels, datasets: [{ data: data.counts,
+            backgroundColor: data.labels.map(l => l === 'Success' ? '#388e3c' : l === 'Failed' ? '#e53935' : l === 'COD' ? '#f57f17' : '#1565c0') }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } } }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Wishlist - NEXOMART{% endblock %}
+{% block content %}
+<div class="container wishlist-page">
+    <h1><i class="fa fa-heart"></i> My Wishlist ({{ products|length }})</h1>
+    {% if products %}
+    <div class="product-grid">
+        {% for p in products %}
+        {% include '_product_card.html' %}
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="fa fa-heart-broken fa-4x"></i>
+        <h3>Your wishlist is empty</h3>
+        <p>Save products you love to buy them later</p>
+        <a href="{{ url_for('products') }}" class="btn btn-primary">Explore Products</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
